@@ -117,17 +117,33 @@ const googleLogin = async (req, res) => {
 
     if (!user) {
       // Create new user for Google login
-      // Generate a long random password for Google-only users
       const randomPassword = require('crypto').randomBytes(16).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
       
+      let baseUsername = username || email.split('@')[0];
+      // Clean username from special characters
+      baseUsername = baseUsername.replace(/[^a-zA-Z0-9]/g, '');
+      if (baseUsername.length < 3) baseUsername = 'user';
+      
+      let finalUsername = baseUsername;
+      let counter = 1;
+      
+      while (true) {
+        const usernameCheck = db.prepare('SELECT id FROM users WHERE username = ?').get(finalUsername);
+        if (!usernameCheck) {
+          break;
+        }
+        finalUsername = `${baseUsername}${counter}`;
+        counter++;
+      }
+      
       const result = db.prepare(
         'INSERT INTO users (username, email, password, photo_url) VALUES (?, ?, ?, ?)'
-      ).run(username || email.split('@')[0], email, hashedPassword, photoURL || null);
+      ).run(finalUsername, email, hashedPassword, photoURL || null);
       
-      user = { id: result.lastInsertRowid, username: username || email.split('@')[0], email, photo_url: photoURL || null };
+      user = { id: result.lastInsertRowid, username: finalUsername, email, photo_url: photoURL || null };
       
-      // Send welcome email for new Google users
+      // Send welcome email
       mailer.sendWelcomeEmail(user.email, user.username);
     } else if (photoURL && photoURL !== user.photo_url) {
       // Update photo if it changed or was missing
