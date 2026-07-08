@@ -169,6 +169,9 @@ function App() {
         />
         <div className="rows-container">
           <MovieRow title="Trending Now" fetchUrl="/api/movies" onMovieClick={handleMovieClick} />
+          <MovieRow title="Korean Hits (K-Drama & K-Movies)" fetchUrl="/api/movies?language=ko" onMovieClick={handleMovieClick} />
+          <MovieRow title="Japanese Anime & Cinema" fetchUrl="/api/movies?language=ja" onMovieClick={handleMovieClick} />
+          <MovieRow title="Bollywood & Indian Cinema" fetchUrl="/api/movies?language=hi" onMovieClick={handleMovieClick} />
           <MovieRow title="Action & Adventure" fetchUrl="/api/movies?genre=28" onMovieClick={handleMovieClick} />
           <MovieRow title="Comedy Hits" fetchUrl="/api/movies?genre=35" onMovieClick={handleMovieClick} />
           <MovieRow title="Top Rated Classics" fetchUrl="/api/movies?genre=18" onMovieClick={handleMovieClick} />

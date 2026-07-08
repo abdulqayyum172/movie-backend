@@ -22,12 +22,14 @@ app.get('/api/auth/me', auth.authenticateToken, auth.getMe);
 // TMDB Movie Routes
 app.get('/api/movies', async (req, res) => {
   try {
-    const { search, genre } = req.query;
+    const { search, genre, language } = req.query;
     let movies;
     if (search) {
       movies = await tmdb.searchMovies(search);
     } else if (genre) {
       movies = await tmdb.getMoviesByGenre(genre);
+    } else if (language) {
+      movies = await tmdb.getMoviesByLanguage(language);
     } else {
       movies = await tmdb.getTrendingMovies();
     }

@@ -70,7 +70,8 @@ const formatMovie = (movie) => {
     rating: movie.vote_average || 0,
     year: movie.release_date ? new Date(movie.release_date).getFullYear() : (movie.first_air_date ? new Date(movie.first_air_date).getFullYear() : 'N/A'),
     genre: movie.genre_ids || (movie.genres ? movie.genres.map(g => g.id) : []),
-    videoUrl: trailer ? `https://www.youtube.com/embed/${trailer.key}?autoplay=1` : null
+    videoUrl: trailer ? `https://www.youtube.com/embed/${trailer.key}?autoplay=1` : null,
+    popularity: movie.popularity || 0
   };
 };
 
@@ -86,8 +87,48 @@ const formatTV = (tv) => {
     rating: tv.vote_average || 0,
     year: tv.first_air_date ? new Date(tv.first_air_date).getFullYear() : 'N/A',
     genre: tv.genre_ids || [],
-    videoUrl: null
+    videoUrl: null,
+    popularity: tv.popularity || 0
   };
 };
 
-module.exports = { getTrendingMovies, getTrendingTV, searchMovies, getMovieDetails, getMoviesByGenre, getGenres };
+const getMoviesByLanguage = async (languageCode) => {
+  try {
+    const moviePromise = tmdbApi.get('/discover/movie', { 
+      params: { 
+        with_original_language: languageCode,
+        sort_by: 'popularity.desc' 
+      } 
+    });
+    
+    const tvPromise = tmdbApi.get('/discover/tv', { 
+      params: { 
+        with_original_language: languageCode,
+        sort_by: 'popularity.desc' 
+      } 
+    });
+
+    const [movieRes, tvRes] = await Promise.all([moviePromise, tvPromise]);
+
+    const movies = (movieRes.data.results || []).map(formatMovie);
+    const tvs = (tvRes.data.results || []).map(formatTV);
+
+    // Combine and sort by popularity descending
+    return [...movies, ...tvs]
+      .filter(Boolean)
+      .sort((a, b) => b.popularity - a.popularity);
+  } catch (err) {
+    console.error(`Error in getMoviesByLanguage for ${languageCode}:`, err.message);
+    return [];
+  }
+};
+
+module.exports = { 
+  getTrendingMovies, 
+  getTrendingTV, 
+  searchMovies, 
+  getMovieDetails, 
+  getMoviesByGenre, 
+  getGenres,
+  getMoviesByLanguage
+};
