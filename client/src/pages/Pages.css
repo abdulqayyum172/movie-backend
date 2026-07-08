@@ -1,0 +1,58 @@
+/* Shared Pages Styles */
+.page-view {
+  min-height: 100vh;
+  padding-top: 180px;
+  padding-bottom: 6rem;
+}
+
+.page-header {
+  margin-bottom: 4rem;
+}
+
+.page-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  background: linear-gradient(to right, #fff, #a1a1aa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
+}
+
+.page-subtitle {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  max-width: 700px;
+  line-height: 1.6;
+}
+
+.no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 6rem 0;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border);
+}
+
+.no-results h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+}
+
+.no-results p {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .page-view {
+    padding-top: 130px;
+  }
+  .page-title {
+    font-size: 2rem;
+  }
+  .page-subtitle {
+    font-size: 1rem;
+  }
+}

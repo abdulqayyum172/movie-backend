@@ -1,0 +1,43 @@
+/* Skeleton.css */
+.skeleton-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  height: 100%;
+  border: 1px solid var(--glass-border);
+}
+
+.skeleton-poster {
+  aspect-ratio: 2/3;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.02) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-info {
+  padding: 1.2rem;
+}
+
+.skeleton-line {
+  height: 1rem;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(139, 92, 246, 0.15) 50%, rgba(255, 255, 255, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.75rem;
+}
+
+.skeleton-line.title {
+  width: 80%;
+  height: 1.25rem;
+}
+
+.skeleton-line.meta {
+  width: 50%;
+  height: 0.9rem;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}

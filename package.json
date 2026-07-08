@@ -1,0 +1,14 @@
+{
+  "name": "movie-box",
+  "version": "1.0.0",
+  "description": "Full-stack movie streaming and downloading application",
+  "scripts": {
+    "start:server": "cd server && npm run dev",
+    "start:client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

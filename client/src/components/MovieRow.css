@@ -1,0 +1,108 @@
+/* MovieRow.css */
+.movie-row {
+  margin: 5rem 0;
+  padding: 0 6%;
+}
+
+.row-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  position: relative;
+  display: inline-block;
+}
+
+.row-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 50px;
+  height: 4px;
+  background: var(--accent-gradient);
+  border-radius: var(--radius-full);
+}
+
+.row-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.row-posters {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 1.5rem;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  padding: 2rem 0;
+  margin: -2rem 0; /* Compensation to avoid cropping hover states */
+}
+
+.row-posters::-webkit-scrollbar {
+  display: none;
+}
+
+.row-movie {
+  flex: 0 0 auto;
+  width: 240px;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.row-movie:hover {
+  transform: scale(1.05) translateY(-8px);
+}
+
+.scroll-btn {
+  position: absolute;
+  z-index: 20;
+  background: rgba(15, 15, 15, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  height: calc(100% - 4rem);
+  width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.row-container:hover .scroll-btn {
+  opacity: 1;
+}
+
+.scroll-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--accent-secondary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.scroll-btn.left { 
+  left: -20px; 
+  border-radius: var(--radius-lg);
+}
+
+.scroll-btn.right { 
+  right: -20px; 
+  border-radius: var(--radius-lg); 
+}
+
+.row-skeleton {
+  flex: 0 0 auto;
+  width: 240px;
+}
+
+@media (max-width: 768px) {
+  .movie-row { margin: 3rem 0; padding: 0 5%; }
+  .row-movie { width: 180px; }
+  .scroll-btn { display: none; }
+  .row-title { font-size: 1.5rem; }
+}

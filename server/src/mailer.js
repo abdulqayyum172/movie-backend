@@ -1,0 +1,84 @@
+const nodemailer = require('nodemailer');
+const ejs = require('ejs');
+const path = require('path');
+
+/**
+ * Mailer Service
+ * A professional wrapper around Nodemailer with template support
+ */
+class MailerService {
+  constructor() {
+    this.transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      secure: process.env.EMAIL_PORT == 465,
+      pool: true, // Use connection pooling for better performance
+      maxConnections: 5,
+      maxMessages: 100,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // Verify connection on startup (optional but recommended for debugging)
+    this.transporter.verify((error, success) => {
+      if (error) {
+        console.error('Mailer connection error:', error.message);
+      } else {
+        console.log('Mailer is ready to send messages');
+      }
+    });
+  }
+
+  /**
+   * Generic method to send emails using EJS templates
+   * @param {string} to - Recipient email
+   * @param {string} subject - Email subject
+   * @param {string} templateName - Name of the .ejs file in templates folder
+   * @param {object} context - Data to pass to the template
+   */
+  async sendWithTemplate(to, subject, templateName, context = {}) {
+    try {
+      const templatePath = path.join(__dirname, 'templates', `${templateName}.ejs`);
+      
+      // Inject global variables (like year, app URL) into context
+      const templateData = {
+        ...context,
+        year: new Date().getFullYear(),
+        appUrl: process.env.APP_URL || 'http://localhost:5173',
+      };
+
+      const html = await ejs.renderFile(templatePath, templateData);
+
+      const info = await this.transporter.sendMail({
+        from: process.env.EMAIL_FROM || '"MovieBox" <noreply@moviebox.com>',
+        to,
+        subject,
+        html,
+      });
+
+      console.log(`Email sent: ${info.messageId} [Template: ${templateName}]`);
+      return info;
+    } catch (error) {
+      console.error(`Failed to send email [Template: ${templateName}]:`, error);
+      // In production, you might want to log this to a service like Sentry
+      return null;
+    }
+  }
+
+  /**
+   * Specific helper for welcome emails
+   */
+  async sendWelcomeEmail(email, username) {
+    return this.sendWithTemplate(
+      email,
+      'Welcome to MovieBox! 🍿',
+      'welcome',
+      { username }
+    );
+  }
+}
+
+// Export as a singleton
+module.exports = new MailerService();
