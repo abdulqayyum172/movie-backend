@@ -118,7 +118,8 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialEmail = '' }
       await loginWithGoogle();
       onClose();
     } catch (err) {
-      setErrors({ server: typeof err === 'string' ? err : 'Google login failed' });
+      const message = typeof err === 'string' ? err : err.message || 'Google login failed';
+      setErrors({ server: message });
     } finally {
       setLoading(false);
     }
