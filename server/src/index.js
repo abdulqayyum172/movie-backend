@@ -14,6 +14,7 @@ app.use(express.json());
 
 // Auth Routes
 app.post('/api/auth/register', auth.register);
+app.post('/api/auth/verify-register', auth.verifyRegister);
 app.post('/api/auth/login', auth.login);
 app.post('/api/auth/google', auth.googleLogin);
 app.get('/api/auth/me', auth.authenticateToken, auth.getMe);

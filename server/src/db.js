@@ -23,6 +23,14 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS pending_users (
+    email TEXT PRIMARY KEY,
+    username TEXT NOT NULL,
+    password TEXT NOT NULL,
+    verification_code TEXT NOT NULL,
+    expires_at INTEGER NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS movies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,

@@ -25,7 +25,7 @@ const register = async (req, res) => {
   }
 
   try {
-    console.log(`Registering user: ${email}`);
+    console.log(`Initiating registration for: ${email}`);
     // Check if user already exists by email
     const existingUser = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(email);
     if (existingUser) {
@@ -42,25 +42,91 @@ const register = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert user
-    const result = db.prepare(
-      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)'
-    ).run(username, email, hashedPassword);
+    // Generate 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes from now
 
-    const user = { id: result.lastInsertRowid, username, email, photo_url: null };
-    const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
+    // Insert or replace into pending_users table
+    db.prepare(`
+      INSERT OR REPLACE INTO pending_users (email, username, password, verification_code, expires_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(email, username, hashedPassword, verificationCode, expiresAt);
 
-    // Send welcome email (asynchronous)
-    mailer.sendWelcomeEmail(email, username);
+    // Send verification email via Brevo/Nodemailer
+    await mailer.sendVerificationEmail(email, verificationCode);
 
-    res.status(201).json({ 
-      message: 'Account created successfully',
-      user, 
-      token 
+    res.status(200).json({ 
+      message: 'Verification code sent to your email. Please verify to complete registration.',
+      email,
+      requiresVerification: true
     });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Internal server error during registration' });
+  }
+};
+
+const verifyRegister = async (req, res) => {
+  const { code } = req.body;
+  const email = req.body.email?.toLowerCase();
+
+  if (!email || !code) {
+    return res.status(400).json({ error: 'Email and verification code are required' });
+  }
+
+  try {
+    console.log(`Verifying registration for: ${email} with code: ${code}`);
+
+    // Check if there is a pending user with this email
+    const pendingUser = db.prepare('SELECT * FROM pending_users WHERE LOWER(email) = ?').get(email);
+    if (!pendingUser) {
+      return res.status(400).json({ error: 'No pending registration found for this email. Please sign up again.' });
+    }
+
+    // Check if code has expired
+    if (Date.now() > pendingUser.expires_at) {
+      db.prepare('DELETE FROM pending_users WHERE LOWER(email) = ?').run(email);
+      return res.status(400).json({ error: 'Verification code has expired. Please sign up again.' });
+    }
+
+    // Check if code matches
+    if (pendingUser.verification_code !== code) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+
+    // Double check if username or email was taken in the meantime
+    const existingUser = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(email);
+    if (existingUser) {
+      db.prepare('DELETE FROM pending_users WHERE LOWER(email) = ?').run(email);
+      return res.status(400).json({ error: 'An account with this email already exists' });
+    }
+    const existingUsername = db.prepare('SELECT * FROM users WHERE username = ?').get(pendingUser.username);
+    if (existingUsername) {
+      return res.status(400).json({ error: 'This username has been taken. Please sign up with a different username.' });
+    }
+
+    // Move pending user to verified users table
+    const result = db.prepare(
+      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)'
+    ).run(pendingUser.username, email, pendingUser.password);
+
+    // Clean up from pending_users table
+    db.prepare('DELETE FROM pending_users WHERE LOWER(email) = ?').run(email);
+
+    const user = { id: result.lastInsertRowid, username: pendingUser.username, email, photo_url: null };
+    const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
+
+    // Send welcome email (asynchronous)
+    mailer.sendWelcomeEmail(email, pendingUser.username);
+
+    res.status(201).json({
+      message: 'Account verified and created successfully',
+      user,
+      token
+    });
+  } catch (error) {
+    console.error('Verification error:', error);
+    res.status(500).json({ error: 'Internal server error during email verification' });
   }
 };
 
@@ -199,4 +265,4 @@ const getMe = (req, res) => {
   }
 };
 
-module.exports = { register, login, googleLogin, authenticateToken, getMe };
+module.exports = { register, verifyRegister, login, googleLogin, authenticateToken, getMe };

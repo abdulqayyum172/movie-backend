@@ -62,6 +62,9 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Attempting registration for:', email);
       const response = await axios.post('/api/auth/register', { username, email, password });
+      if (response.data.requiresVerification) {
+        return { requiresVerification: true, email: response.data.email };
+      }
       const { user, token } = response.data;
       console.log('Registration successful:', user);
       
@@ -72,6 +75,23 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Registration error:', err);
       throw err.response?.data?.error || 'Registration failed';
+    }
+  };
+
+  const verifyRegisterCode = async (email, code) => {
+    try {
+      console.log('Attempting verification for:', email);
+      const response = await axios.post('/api/auth/verify-register', { email, code });
+      const { user, token } = response.data;
+      console.log('Verification successful:', user);
+      
+      localStorage.setItem('token', token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setUser(user);
+      return user;
+    } catch (err) {
+      console.error('Verification error:', err);
+      throw err.response?.data?.error || 'Verification failed';
     }
   };
 
@@ -116,7 +136,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ 
-      user, login, register, loginWithGoogle, sendOtp, setupRecaptcha, logout, loading 
+      user, login, register, verifyRegisterCode, loginWithGoogle, sendOtp, setupRecaptcha, logout, loading 
     }}>
       {children}
     </AuthContext.Provider>
