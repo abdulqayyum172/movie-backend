@@ -4,13 +4,13 @@ import { getAnalytics, isSupported } from "firebase/analytics";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyA_K5XipT0b8DvInok7CC-XH71UJVguvVQ",
-  authDomain: "movie-app-2011a.firebaseapp.com",
-  projectId: "movie-app-2011a",
-  storageBucket: "movie-app-2011a.firebasestorage.app",
-  messagingSenderId: "448732734343",
-  appId: "1:448732734343:web:b6ce7f4e3e4e3918d22922",
-  measurementId: "G-WS649KGPTQ"
+  apiKey: "AIzaSyCBtZyDe-9amdrETJrhQSQAlFylk90Q6Rs",
+  authDomain: "movie-backend-60833.firebaseapp.com",
+  projectId: "movie-backend-60833",
+  storageBucket: "movie-backend-60833.firebasestorage.app",
+  messagingSenderId: "894031418996",
+  appId: "1:894031418996:web:15990ebd65856cd9b3a321",
+  measurementId: "G-EX0B3GMXQG"
 };
 
 // Initialize Firebase
