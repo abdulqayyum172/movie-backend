@@ -10,7 +10,11 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Configure axios defaults
-  axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
+  let apiBase = import.meta.env.VITE_API_URL || '';
+  if (apiBase.endsWith('/')) {
+    apiBase = apiBase.slice(0, -1);
+  }
+  axios.defaults.baseURL = apiBase;
 
   useEffect(() => {
     const checkAuth = async () => {
