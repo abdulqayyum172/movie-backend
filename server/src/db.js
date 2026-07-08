@@ -1,7 +1,15 @@
+const fs = require('fs');
 const Database = require('better-sqlite3');
 const path = require('path');
 const dbPath = path.resolve(__dirname, '../../data/movies.sqlite');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
+// Ensure the parent directory exists
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
 const db = new Database(dbPath);
 
 // Initialize tables
