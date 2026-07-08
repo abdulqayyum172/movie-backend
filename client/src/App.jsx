@@ -39,7 +39,7 @@ function App() {
     setActiveTab(defaultTab);
     setSelectedServer('autoembed');
     try {
-      const response = await axios.get(`/api/movies/${selected.id}`);
+      const response = await axios.get(`/api/movies/${selected.id}?type=${selected.type}`);
       setSelectedMovie({ ...response.data, type: selected.type });
     } catch (err) {
       console.error('Failed to fetch details');

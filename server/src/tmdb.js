@@ -30,8 +30,17 @@ const getTrendingTV = async () => {
 
 const searchMovies = async (query) => {
   if (!query) return [];
-  const response = await tmdbApi.get('/search/movie', { params: { query } });
-  return (response.data.results || []).map(formatMovie);
+  const response = await tmdbApi.get('/search/multi', { params: { query } });
+  return (response.data.results || [])
+    .map(item => {
+      if (item.media_type === 'movie') {
+        return formatMovie(item);
+      } else if (item.media_type === 'tv') {
+        return formatTV(item);
+      }
+      return null;
+    })
+    .filter(Boolean);
 };
 
 const getMovieDetails = async (id) => {
@@ -39,6 +48,13 @@ const getMovieDetails = async (id) => {
     params: { append_to_response: 'videos' }
   });
   return formatMovie(response.data);
+};
+
+const getTVDetails = async (id) => {
+  const response = await tmdbApi.get(`/tv/${id}`, {
+    params: { append_to_response: 'videos' }
+  });
+  return formatTV(response.data);
 };
 
 const getMoviesByGenre = async (genreId) => {
@@ -77,6 +93,13 @@ const formatMovie = (movie) => {
 
 const formatTV = (tv) => {
   if (!tv) return null;
+
+  const videos = tv.videos?.results || [];
+  const trailer = videos.find(v => v.type === 'Trailer' && v.site === 'YouTube')
+    || videos.find(v => v.type === 'Teaser' && v.site === 'YouTube')
+    || videos.find(v => v.type === 'Clip' && v.site === 'YouTube')
+    || videos.find(v => v.site === 'YouTube');
+
   return {
     id: tv.id,
     type: 'tv',
@@ -86,8 +109,8 @@ const formatTV = (tv) => {
     backdropUrl: tv.backdrop_path ? `https://image.tmdb.org/t/p/original${tv.backdrop_path}` : null,
     rating: tv.vote_average || 0,
     year: tv.first_air_date ? new Date(tv.first_air_date).getFullYear() : 'N/A',
-    genre: tv.genre_ids || [],
-    videoUrl: null,
+    genre: tv.genre_ids || (tv.genres ? tv.genres.map(g => g.id) : []),
+    videoUrl: trailer ? `https://www.youtube.com/embed/${trailer.key}?autoplay=1` : null,
     popularity: tv.popularity || 0
   };
 };
@@ -128,6 +151,7 @@ module.exports = {
   getTrendingTV, 
   searchMovies, 
   getMovieDetails, 
+  getTVDetails,
   getMoviesByGenre, 
   getGenres,
   getMoviesByLanguage

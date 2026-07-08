@@ -51,10 +51,16 @@ app.get('/api/movies/genres', async (req, res) => {
 
 app.get('/api/movies/:id', async (req, res) => {
   try {
-    const movie = await tmdb.getMovieDetails(req.params.id);
+    const { type } = req.query;
+    let movie;
+    if (type === 'tv') {
+      movie = await tmdb.getTVDetails(req.params.id);
+    } else {
+      movie = await tmdb.getMovieDetails(req.params.id);
+    }
     res.json(movie);
   } catch (error) {
-    res.status(404).json({ message: 'Movie not found on TMDB' });
+    res.status(404).json({ message: 'Movie or TV show not found on TMDB' });
   }
 });
 
