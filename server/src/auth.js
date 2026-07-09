@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('./db');
-const mailer = require('./mailer');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -25,108 +24,31 @@ const register = async (req, res) => {
   }
 
   try {
-    console.log(`Initiating registration for: ${email}`);
-    // Check if user already exists by email
-    const existingUser = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(email);
+    console.log(`Registering: ${email}`);
+
+    const existingUser = db.prepare('SELECT id FROM users WHERE LOWER(email) = ?').get(email);
     if (existingUser) {
-      console.log(`Registration failed: Email ${email} already exists`);
       return res.status(400).json({ error: 'An account with this email already exists' });
     }
 
-    // Check if username is taken
-    const existingUsername = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+    const existingUsername = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
     if (existingUsername) {
       return res.status(400).json({ error: 'This username is already taken' });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate 6-digit verification code
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes from now
+    const result = db.prepare(
+      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)'
+    ).run(username, email, hashedPassword);
 
-    // Insert or replace into pending_users table
-    db.prepare(`
-      INSERT OR REPLACE INTO pending_users (email, username, password, verification_code, expires_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(email, username, hashedPassword, verificationCode, expiresAt);
+    const user = { id: result.lastInsertRowid, username, email, photo_url: null };
+    const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
 
-    // Send verification email via Brevo/Nodemailer
-    await mailer.sendVerificationEmail(email, verificationCode);
-
-    res.status(200).json({ 
-      message: 'Verification code sent to your email. Please verify to complete registration.',
-      email,
-      requiresVerification: true
-    });
+    res.status(201).json({ message: 'Account created successfully', user, token });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Internal server error during registration' });
-  }
-};
-
-const verifyRegister = async (req, res) => {
-  const { code } = req.body;
-  const email = req.body.email?.toLowerCase();
-
-  if (!email || !code) {
-    return res.status(400).json({ error: 'Email and verification code are required' });
-  }
-
-  try {
-    console.log(`Verifying registration for: ${email} with code: ${code}`);
-
-    // Check if there is a pending user with this email
-    const pendingUser = db.prepare('SELECT * FROM pending_users WHERE LOWER(email) = ?').get(email);
-    if (!pendingUser) {
-      return res.status(400).json({ error: 'No pending registration found for this email. Please sign up again.' });
-    }
-
-    // Check if code has expired
-    if (Date.now() > pendingUser.expires_at) {
-      db.prepare('DELETE FROM pending_users WHERE LOWER(email) = ?').run(email);
-      return res.status(400).json({ error: 'Verification code has expired. Please sign up again.' });
-    }
-
-    // Check if code matches
-    if (pendingUser.verification_code !== code) {
-      return res.status(400).json({ error: 'Invalid verification code' });
-    }
-
-    // Double check if username or email was taken in the meantime
-    const existingUser = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(email);
-    if (existingUser) {
-      db.prepare('DELETE FROM pending_users WHERE LOWER(email) = ?').run(email);
-      return res.status(400).json({ error: 'An account with this email already exists' });
-    }
-    const existingUsername = db.prepare('SELECT * FROM users WHERE username = ?').get(pendingUser.username);
-    if (existingUsername) {
-      return res.status(400).json({ error: 'This username has been taken. Please sign up with a different username.' });
-    }
-
-    // Move pending user to verified users table
-    const result = db.prepare(
-      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)'
-    ).run(pendingUser.username, email, pendingUser.password);
-
-    // Clean up from pending_users table
-    db.prepare('DELETE FROM pending_users WHERE LOWER(email) = ?').run(email);
-
-    const user = { id: result.lastInsertRowid, username: pendingUser.username, email, photo_url: null };
-    const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
-
-    // Send welcome email (asynchronous)
-    mailer.sendWelcomeEmail(email, pendingUser.username);
-
-    res.status(201).json({
-      message: 'Account verified and created successfully',
-      user,
-      token
-    });
-  } catch (error) {
-    console.error('Verification error:', error);
-    res.status(500).json({ error: 'Internal server error during email verification' });
   }
 };
 
@@ -142,14 +64,11 @@ const login = async (req, res) => {
     console.log(`Login attempt: ${email}`);
     const user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(email);
     if (!user) {
-      console.log(`Login failed: User ${email} not found`);
-      // Use generic message for security
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log(`Login failed: Incorrect password for ${email}`);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -182,37 +101,24 @@ const googleLogin = async (req, res) => {
     let user = db.prepare('SELECT * FROM users WHERE LOWER(email) = ?').get(email);
 
     if (!user) {
-      // Create new user for Google login
       const randomPassword = require('crypto').randomBytes(16).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
-      
-      let baseUsername = username || email.split('@')[0];
-      // Clean username from special characters
-      baseUsername = baseUsername.replace(/[^a-zA-Z0-9]/g, '');
+
+      let baseUsername = (username || email.split('@')[0]).replace(/[^a-zA-Z0-9]/g, '');
       if (baseUsername.length < 3) baseUsername = 'user';
-      
+
       let finalUsername = baseUsername;
       let counter = 1;
-      
-      while (true) {
-        const usernameCheck = db.prepare('SELECT id FROM users WHERE username = ?').get(finalUsername);
-        if (!usernameCheck) {
-          break;
-        }
-        finalUsername = `${baseUsername}${counter}`;
-        counter++;
+      while (db.prepare('SELECT id FROM users WHERE username = ?').get(finalUsername)) {
+        finalUsername = `${baseUsername}${counter++}`;
       }
-      
+
       const result = db.prepare(
         'INSERT INTO users (username, email, password, photo_url) VALUES (?, ?, ?, ?)'
       ).run(finalUsername, email, hashedPassword, photoURL || null);
-      
+
       user = { id: result.lastInsertRowid, username: finalUsername, email, photo_url: photoURL || null };
-      
-      // Send welcome email
-      mailer.sendWelcomeEmail(user.email, user.username);
     } else if (photoURL && photoURL !== user.photo_url) {
-      // Update photo if it changed or was missing
       db.prepare('UPDATE users SET photo_url = ? WHERE id = ?').run(photoURL, user.id);
       user.photo_url = photoURL;
     }
@@ -229,8 +135,10 @@ const googleLogin = async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Google login error:', error);
-    res.status(500).json({ error: 'Internal server error during Google login' });
+    console.error('Google login error — message:', error.message);
+    console.error('Google login error — code:', error.code);
+    console.error('Google login error — stack:', error.stack);
+    res.status(500).json({ error: error.message || 'Internal server error during Google login' });
   }
 };
 
@@ -265,4 +173,4 @@ const getMe = (req, res) => {
   }
 };
 
-module.exports = { register, verifyRegister, login, googleLogin, authenticateToken, getMe };
+module.exports = { register, login, googleLogin, authenticateToken, getMe };
