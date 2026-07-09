@@ -9,8 +9,19 @@ const tmdb = require('./tmdb');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: true,           // reflect the request origin (allows all)
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+app.options('*', cors());   // handle pre-flight for all routes
 app.use(express.json());
+
+// Health check — keeps Render free-tier awake and lets client detect backend status
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // Auth Routes
 app.post('/api/auth/register', auth.register);

@@ -11,15 +11,34 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Configure axios defaults
-  let apiBase = import.meta.env.VITE_API_URL || 
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-      ? '' 
+  let apiBase = import.meta.env.VITE_API_URL ||
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? ''
       : 'https://cinestream-backend-4vg0.onrender.com');
-      
+
   if (apiBase.endsWith('/')) {
     apiBase = apiBase.slice(0, -1);
   }
   axios.defaults.baseURL = apiBase;
+  axios.defaults.timeout = 15000; // 15 s — enough for Render cold-start
+
+  // Auto-retry on network errors (not on 4xx/5xx)
+  axios.interceptors.response.use(
+    res => res,
+    async err => {
+      const config = err.config;
+      if (!config) return Promise.reject(err);
+      config._retryCount = config._retryCount || 0;
+      const isNetworkError = !err.response; // timeout, DNS fail, etc.
+      if (isNetworkError && config._retryCount < 2) {
+        config._retryCount += 1;
+        const delay = config._retryCount * 2000; // 2 s, 4 s
+        await new Promise(r => setTimeout(r, delay));
+        return axios(config);
+      }
+      return Promise.reject(err);
+    }
+  );
 
   useEffect(() => {
     const checkAuth = async () => {
