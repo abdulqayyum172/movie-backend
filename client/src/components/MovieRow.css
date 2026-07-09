@@ -100,9 +100,16 @@
   width: 240px;
 }
 
-@media (max-width: 768px) {
-  .movie-row { margin: 3rem 0; padding: 0 5%; }
-  .row-movie { width: 180px; }
-  .scroll-btn { display: none; }
-  .row-title { font-size: 1.5rem; }
+@media (max-width: 899px) {
+  .movie-row    { margin: 2rem 0; padding: 0 5%; }
+  .row-title    { font-size: 1.25rem; }
+  .row-movie    { width: 150px; }
+  .row-skeleton { width: 150px; }
+  .scroll-btn   { display: none; }   /* swipe on mobile */
 }
+
+@media (max-width: 480px) {
+  .row-movie    { width: 130px; }
+  .row-skeleton { width: 130px; }
+}
+

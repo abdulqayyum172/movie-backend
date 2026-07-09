@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+
 import axios from 'axios';
 import { auth } from '../firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 
 const AuthContext = createContext();
 
@@ -22,6 +23,28 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Handle Google redirect result first (fires after signInWithRedirect)
+      try {
+        const redirectResult = await getRedirectResult(auth);
+        if (redirectResult) {
+          const { user: firebaseUser } = redirectResult;
+          console.log('Google redirect login successful, syncing with backend:', firebaseUser.email);
+          const response = await axios.post('/api/auth/google', {
+            email: firebaseUser.email,
+            username: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+            photoURL: firebaseUser.photoURL
+          });
+          const { user, token } = response.data;
+          localStorage.setItem('token', token);
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          setUser(user);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Google redirect result error:', err);
+      }
+
       const token = localStorage.getItem('token');
       if (token) {
         try {
@@ -62,12 +85,8 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Attempting registration for:', email);
       const response = await axios.post('/api/auth/register', { username, email, password });
-      if (response.data.requiresVerification) {
-        return { requiresVerification: true, email: response.data.email };
-      }
       const { user, token } = response.data;
       console.log('Registration successful:', user);
-      
       localStorage.setItem('token', token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
@@ -78,22 +97,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const verifyRegisterCode = async (email, code) => {
-    try {
-      console.log('Attempting verification for:', email);
-      const response = await axios.post('/api/auth/verify-register', { email, code });
-      const { user, token } = response.data;
-      console.log('Verification successful:', user);
-      
-      localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
-      return user;
-    } catch (err) {
-      console.error('Verification error:', err);
-      throw err.response?.data?.error || 'Verification failed';
-    }
-  };
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -123,6 +126,14 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       return user;
     } catch (err) {
+      // Popup was blocked — fall back to redirect flow
+      if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-cancelled-by-user') {
+        console.warn('Popup blocked, falling back to redirect sign-in...');
+        const provider = new GoogleAuthProvider();
+        await signInWithRedirect(auth, provider);
+        // signInWithRedirect navigates away; result is handled in useEffect on return
+        return;
+      }
       console.error('Google login failed details:', err);
       throw err.response?.data?.error || err.message || err.code || 'Google login failed';
     }
@@ -135,8 +146,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, login, register, verifyRegisterCode, loginWithGoogle, sendOtp, setupRecaptcha, logout, loading 
+    <AuthContext.Provider value={{
+      user, login, register, loginWithGoogle, sendOtp, setupRecaptcha, logout, loading
     }}>
       {children}
     </AuthContext.Provider>
