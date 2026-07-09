@@ -73,10 +73,13 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', initialEmail = '' }
     setLoading(true);
     setErrors({});
     try {
-      await loginWithGoogle();
-      onClose();
+      const result = await loginWithGoogle();
+      // null means the user closed/cancelled the popup — don't show an error
+      if (result !== null && result !== undefined) {
+        onClose();
+      }
     } catch (err) {
-      const message = typeof err === 'string' ? err : err.message || 'Google login failed';
+      const message = typeof err === 'string' ? err : err.message || 'Google sign-in failed. Please try again.';
       setErrors({ server: message });
     } finally {
       setLoading(false);

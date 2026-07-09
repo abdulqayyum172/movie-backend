@@ -108,6 +108,7 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Starting Google login...');
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
       const result = await signInWithPopup(auth, provider);
       const { user: firebaseUser } = result;
       console.log('Firebase login successful, syncing with backend:', firebaseUser.email);
@@ -126,16 +127,29 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       return user;
     } catch (err) {
-      // Popup was blocked — fall back to redirect flow
-      if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-cancelled-by-user') {
+      const code = err.code || '';
+
+      // User deliberately closed the popup — treat as silent cancel, not an error
+      if (
+        code === 'auth/popup-closed-by-user' ||
+        code === 'auth/cancelled-popup-request'
+      ) {
+        console.info('Google sign-in cancelled by user.');
+        return null; // return null so callers know it was cancelled
+      }
+
+      // Popup was blocked by the browser — fall back to redirect flow
+      if (code === 'auth/popup-blocked') {
         console.warn('Popup blocked, falling back to redirect sign-in...');
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
         await signInWithRedirect(auth, provider);
         // signInWithRedirect navigates away; result is handled in useEffect on return
         return;
       }
+
       console.error('Google login failed details:', err);
-      throw err.response?.data?.error || err.message || err.code || 'Google login failed';
+      throw err.response?.data?.error || err.message || code || 'Google login failed';
     }
   };
 
