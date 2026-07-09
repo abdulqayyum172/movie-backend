@@ -112,7 +112,7 @@ function App() {
     } catch { /* silent */ }
   };
 
-  /* ---- server URL ---- */
+  /* ---- stream server URL ---- */
   const getServerUrl = () => {
     if (!selectedMovie) return '';
     const isTV = selectedMovie.type === 'tv';
@@ -124,6 +124,55 @@ function App() {
       case 'vidsrc_me': return isTV ? `https://vidsrc.me/embed/tv?tmdb=${id}` : `https://vidsrc.me/embed/movie?tmdb=${id}`;
       default:          return isTV ? `https://autoembed.co/tv/tmdb/${id}` : `https://autoembed.co/movie/tmdb/${id}`;
     }
+  };
+
+  /* ---- download config ---- */
+  const DOWNLOAD_SERVERS = [
+    {
+      id: 'dl_vidsrc',
+      label: 'Server 1',
+      getUrl: (id, isTV) => isTV
+        ? `https://dl.vidsrc.vip/tv/${id}`
+        : `https://dl.vidsrc.vip/movie/${id}`,
+    },
+    {
+      id: 'multiembed',
+      label: 'Server 2',
+      getUrl: (id, isTV) => isTV
+        ? `https://multiembed.mov/?video_id=${id}&tmdb=1&tv=1`
+        : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+    },
+    {
+      id: 'moviesapi',
+      label: 'Server 3',
+      getUrl: (id, isTV) => isTV
+        ? `https://moviesapi.club/tv/${id}`
+        : `https://moviesapi.club/movie/${id}`,
+    },
+    {
+      id: 'vidsrc_xyz',
+      label: 'Server 4',
+      getUrl: (id, isTV) => isTV
+        ? `https://vidsrc.xyz/embed/tv?tmdb=${id}`
+        : `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
+    },
+  ];
+
+  const QUALITY_OPTIONS = [
+    { label: '360p',  tag: 'SD',  color: '#6b7280' },
+    { label: '480p',  tag: 'SD+', color: '#8b5cf6' },
+    { label: '720p',  tag: 'HD',  color: '#3b82f6' },
+    { label: '1080p', tag: 'FHD', color: '#10b981' },
+    { label: '4K',    tag: 'UHD', color: '#f59e0b' },
+  ];
+
+  const [selectedDlServer, setSelectedDlServer] = useState('dl_vidsrc');
+
+  const getDownloadUrl = () => {
+    if (!selectedMovie) return '#';
+    const isTV = selectedMovie.type === 'tv';
+    const server = DOWNLOAD_SERVERS.find(s => s.id === selectedDlServer) || DOWNLOAD_SERVERS[0];
+    return server.getUrl(selectedMovie.id, isTV);
   };
 
   const openAuth = (mode, email = '') => {
@@ -416,6 +465,10 @@ function App() {
                       className={`player-tab ${activeTab === 'movie' ? 'active' : ''}`}
                       onClick={() => setActiveTab('movie')}
                     >Full Movie</button>
+                    <button
+                      className={`player-tab download-tab ${activeTab === 'download' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('download')}
+                    ><Download size={14} style={{marginRight:'4px'}} /> Download</button>
                   </div>
 
                   {activeTab === 'movie' && (
@@ -435,7 +488,52 @@ function App() {
                 </div>
 
                 <div className="video-player">
-                  {activeTab === 'movie' ? (
+                  {activeTab === 'download' ? (
+                    <div className="download-panel">
+                      <div className="dl-header">
+                        <Download size={32} className="dl-header-icon" />
+                        <div>
+                          <h3>{selectedMovie.title}</h3>
+                          <p>Pick a server, then click your preferred quality to download.</p>
+                        </div>
+                      </div>
+
+                      <div className="dl-server-row">
+                        <span className="dl-label">Download Server:</span>
+                        <div className="dl-server-btns">
+                          {DOWNLOAD_SERVERS.map(s => (
+                            <button
+                              key={s.id}
+                              className={`dl-server-btn ${selectedDlServer === s.id ? 'active' : ''}`}
+                              onClick={() => setSelectedDlServer(s.id)}
+                            >{s.label}</button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <p className="dl-quality-label">Select Quality:</p>
+                      <div className="dl-quality-grid">
+                        {QUALITY_OPTIONS.map(q => (
+                          <a
+                            key={q.label}
+                            href={getDownloadUrl()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="dl-quality-btn"
+                          >
+                            <span className="dl-quality-tag" style={{ background: q.color }}>{q.tag}</span>
+                            <span className="dl-quality-res">{q.label}</span>
+                            <Download size={15} />
+                          </a>
+                        ))}
+                      </div>
+
+                      <div className="dl-notice">
+                        <AlertCircle size={14} />
+                        <span>If a server doesn't work, switch servers above and retry.</span>
+                      </div>
+                    </div>
+                  ) : activeTab === 'movie' ? (
                     <iframe
                       key={selectedServer}
                       src={getServerUrl()}
@@ -478,7 +576,7 @@ function App() {
                   <button className="btn-primary" onClick={() => setActiveTab('movie')}>
                     <Play size={18} fill="currentColor" /> Watch
                   </button>
-                  <button className="btn-secondary" onClick={() => alert('Download coming soon!')}>
+                  <button className="btn-secondary" onClick={() => setActiveTab('download')}>
                     <Download size={18} /> Download
                   </button>
                 </div>
