@@ -21,7 +21,7 @@ app.get('/api/auth/me', auth.authenticateToken, auth.getMe);
 // TMDB Movie Routes
 app.get('/api/movies', async (req, res) => {
   try {
-    const { search, genre, language } = req.query;
+    const { search, genre, language, region } = req.query;
     let movies;
     if (search) {
       movies = await tmdb.searchMovies(search);
@@ -29,6 +29,8 @@ app.get('/api/movies', async (req, res) => {
       movies = await tmdb.getMoviesByGenre(genre);
     } else if (language) {
       movies = await tmdb.getMoviesByLanguage(language);
+    } else if (region) {
+      movies = await tmdb.getMoviesByRegion(region);
     } else {
       movies = await tmdb.getTrendingMovies();
     }
@@ -36,6 +38,24 @@ app.get('/api/movies', async (req, res) => {
   } catch (error) {
     console.error('TMDB Error:', error.message);
     res.status(500).json({ error: 'Failed to fetch movies from TMDB' });
+  }
+});
+
+app.get('/api/movies/top-rated', async (req, res) => {
+  try {
+    const movies = await tmdb.getTopRatedMovies();
+    res.json(movies);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch top-rated movies' });
+  }
+});
+
+app.get('/api/movies/upcoming', async (req, res) => {
+  try {
+    const movies = await tmdb.getUpcomingMovies();
+    res.json(movies);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch upcoming movies' });
   }
 });
 

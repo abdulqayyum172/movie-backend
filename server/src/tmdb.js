@@ -146,6 +146,65 @@ const getMoviesByLanguage = async (languageCode) => {
   }
 };
 
+/**
+ * Fetch movies by origin country code(s).
+ * countryCodes: string like 'NG' or comma-separated 'NG,GH,ZA'
+ */
+const getMoviesByRegion = async (countryCodes) => {
+  try {
+    // TMDB supports pipe-separated list for OR matching
+    const countryParam = countryCodes.split(',').join('|');
+
+    const moviePromise = tmdbApi.get('/discover/movie', {
+      params: {
+        with_origin_country: countryParam,
+        sort_by: 'popularity.desc',
+        'vote_count.gte': 5,
+      },
+    });
+
+    const tvPromise = tmdbApi.get('/discover/tv', {
+      params: {
+        with_origin_country: countryParam,
+        sort_by: 'popularity.desc',
+        'vote_count.gte': 5,
+      },
+    });
+
+    const [movieRes, tvRes] = await Promise.all([moviePromise, tvPromise]);
+
+    const movies = (movieRes.data.results || []).map(formatMovie);
+    const tvs = (tvRes.data.results || []).map(formatTV);
+
+    return [...movies, ...tvs]
+      .filter(Boolean)
+      .sort((a, b) => b.popularity - a.popularity);
+  } catch (err) {
+    console.error(`Error in getMoviesByRegion for ${countryCodes}:`, err.message);
+    return [];
+  }
+};
+
+const getTopRatedMovies = async () => {
+  try {
+    const response = await tmdbApi.get('/movie/top_rated');
+    return (response.data.results || []).map(formatMovie);
+  } catch (err) {
+    console.error('Error in getTopRatedMovies:', err.message);
+    return [];
+  }
+};
+
+const getUpcomingMovies = async () => {
+  try {
+    const response = await tmdbApi.get('/movie/upcoming');
+    return (response.data.results || []).map(formatMovie);
+  } catch (err) {
+    console.error('Error in getUpcomingMovies:', err.message);
+    return [];
+  }
+};
+
 module.exports = { 
   getTrendingMovies, 
   getTrendingTV, 
@@ -154,5 +213,8 @@ module.exports = {
   getTVDetails,
   getMoviesByGenre, 
   getGenres,
-  getMoviesByLanguage
+  getMoviesByLanguage,
+  getMoviesByRegion,
+  getTopRatedMovies,
+  getUpcomingMovies,
 };

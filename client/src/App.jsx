@@ -183,16 +183,57 @@ function App() {
           onInfo={(m) => handleMovieClick(m, 'trailer')}
         />
         <div className="rows-container">
-          <MovieRow title="Trending Now"                fetchUrl="/api/movies"              onMovieClick={handleMovieClick} />
-          <MovieRow title="Korean Hits"                 fetchUrl="/api/movies?language=ko"  onMovieClick={handleMovieClick} />
-          <MovieRow title="Japanese Anime & Cinema"     fetchUrl="/api/movies?language=ja"  onMovieClick={handleMovieClick} />
-          <MovieRow title="Bollywood & Indian Cinema"   fetchUrl="/api/movies?language=hi"  onMovieClick={handleMovieClick} />
-          <MovieRow title="Action & Adventure"          fetchUrl="/api/movies?genre=28"     onMovieClick={handleMovieClick} />
-          <MovieRow title="Comedy Hits"                 fetchUrl="/api/movies?genre=35"     onMovieClick={handleMovieClick} />
-          <MovieRow title="Top Rated Classics"          fetchUrl="/api/movies?genre=18"     onMovieClick={handleMovieClick} />
-          <MovieRow title="Sci-Fi & Fantasy"            fetchUrl="/api/movies?genre=878"    onMovieClick={handleMovieClick} />
-          <MovieRow title="Horror & Thriller"           fetchUrl="/api/movies?genre=27"     onMovieClick={handleMovieClick} />
-          <MovieRow title="Romantic Stories"            fetchUrl="/api/movies?genre=10749"  onMovieClick={handleMovieClick} />
+          {/* ── GLOBAL & TRENDING ─────────────────────────────── */}
+          <MovieRow title="🌍 Trending Worldwide"          fetchUrl="/api/movies"                          onMovieClick={handleMovieClick} />
+          <MovieRow title="⭐ Top Rated All Time"           fetchUrl="/api/movies/top-rated"                onMovieClick={handleMovieClick} />
+          <MovieRow title="🎬 Coming Soon"                 fetchUrl="/api/movies/upcoming"                 onMovieClick={handleMovieClick} />
+
+          {/* ── AFRICA ────────────────────────────────────────── */}
+          <MovieRow title="🇳🇬 Nollywood — Nigeria & Ghana"  fetchUrl="/api/movies?region=NG,GH"             onMovieClick={handleMovieClick} />
+          <MovieRow title="🇿🇦 South African Cinema"         fetchUrl="/api/movies?region=ZA"                onMovieClick={handleMovieClick} />
+          <MovieRow title="🌍 French-African Cinema"         fetchUrl="/api/movies?region=CI,SN,CM,ML,BF"    onMovieClick={handleMovieClick} />
+          <MovieRow title="🌍 East & North Africa"           fetchUrl="/api/movies?region=EG,ET,KE,TZ,MA,DZ" onMovieClick={handleMovieClick} />
+
+          {/* ── ASIA ─────────────────────────────────────────── */}
+          <MovieRow title="🇰🇷 Korean Hits & K-Dramas"       fetchUrl="/api/movies?language=ko"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🇯🇵 Japanese Anime & Cinema"      fetchUrl="/api/movies?language=ja"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🇨🇳 Chinese Cinema"               fetchUrl="/api/movies?region=CN,HK,TW"          onMovieClick={handleMovieClick} />
+          <MovieRow title="🇮🇳 Bollywood & Indian Cinema"    fetchUrl="/api/movies?language=hi"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🇮🇳 Tamil & South Indian"         fetchUrl="/api/movies?language=ta"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🇹🇭 Thai Cinema"                  fetchUrl="/api/movies?region=TH"                onMovieClick={handleMovieClick} />
+          <MovieRow title="🇵🇭 Filipino Movies"              fetchUrl="/api/movies?region=PH"                onMovieClick={handleMovieClick} />
+          <MovieRow title="🇮🇩 Indonesian Cinema"            fetchUrl="/api/movies?region=ID"                onMovieClick={handleMovieClick} />
+
+          {/* ── MIDDLE EAST ──────────────────────────────────── */}
+          <MovieRow title="🌙 Arabic Cinema"                 fetchUrl="/api/movies?language=ar"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🇮🇷 Persian & Iranian Cinema"     fetchUrl="/api/movies?language=fa"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🇹🇷 Turkish Drama & Films"        fetchUrl="/api/movies?language=tr"              onMovieClick={handleMovieClick} />
+
+          {/* ── EUROPE ───────────────────────────────────────── */}
+          <MovieRow title="🇫🇷 French Cinema"                fetchUrl="/api/movies?language=fr"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🇪🇸 Spanish Cinema"               fetchUrl="/api/movies?language=es"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🇩🇪 German Cinema"                fetchUrl="/api/movies?language=de"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🇮🇹 Italian Cinema"               fetchUrl="/api/movies?language=it"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🇷🇺 Russian Cinema"               fetchUrl="/api/movies?language=ru"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🇸🇪 Scandinavian Cinema"          fetchUrl="/api/movies?region=SE,NO,DK,FI"       onMovieClick={handleMovieClick} />
+
+          {/* ── LATIN AMERICA ────────────────────────────────── */}
+          <MovieRow title="🇧🇷 Brazilian Cinema"             fetchUrl="/api/movies?region=BR"                onMovieClick={handleMovieClick} />
+          <MovieRow title="🇲🇽 Mexican Cinema"               fetchUrl="/api/movies?region=MX"                onMovieClick={handleMovieClick} />
+          <MovieRow title="🌎 Latin American Films"           fetchUrl="/api/movies?region=CO,AR,CL,PE,VE"   onMovieClick={handleMovieClick} />
+
+          {/* ── GENRES ───────────────────────────────────────── */}
+          <MovieRow title="💥 Action & Adventure"            fetchUrl="/api/movies?genre=28"                 onMovieClick={handleMovieClick} />
+          <MovieRow title="😂 Comedy Hits"                   fetchUrl="/api/movies?genre=35"                 onMovieClick={handleMovieClick} />
+          <MovieRow title="🎭 Drama"                         fetchUrl="/api/movies?genre=18"                 onMovieClick={handleMovieClick} />
+          <MovieRow title="🚀 Sci-Fi & Fantasy"              fetchUrl="/api/movies?genre=878"                onMovieClick={handleMovieClick} />
+          <MovieRow title="😱 Horror & Thriller"             fetchUrl="/api/movies?genre=27"                 onMovieClick={handleMovieClick} />
+          <MovieRow title="❤️ Romance"                       fetchUrl="/api/movies?genre=10749"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🎶 Music & Musicals"              fetchUrl="/api/movies?genre=10402"              onMovieClick={handleMovieClick} />
+          <MovieRow title="🔍 Mystery & Crime"               fetchUrl="/api/movies?genre=9648"               onMovieClick={handleMovieClick} />
+          <MovieRow title="📜 History & War"                 fetchUrl="/api/movies?genre=36"                 onMovieClick={handleMovieClick} />
+          <MovieRow title="🎥 Documentary"                   fetchUrl="/api/movies?genre=99"                 onMovieClick={handleMovieClick} />
+          <MovieRow title="🧸 Animation & Family"            fetchUrl="/api/movies?genre=16"                 onMovieClick={handleMovieClick} />
         </div>
       </>
     );
