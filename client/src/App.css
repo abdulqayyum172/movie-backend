@@ -576,3 +576,48 @@
     padding: 2.5rem;
   }
 }
+
+/* PWA Install Button */
+.btn-install {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: var(--text-primary);
+  padding: 0.6rem 1.4rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
+}
+
+.btn-install:hover {
+  background: var(--accent-gradient);
+  border-color: transparent;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(236, 72, 153, 0.3);
+}
+
+.btn-install svg {
+  color: var(--accent-secondary);
+  transition: color 0.3s ease;
+}
+
+.btn-install:hover svg {
+  color: #fff;
+}
+
+/* Ensure install button works on mobile navigation if space is limited */
+@media (max-width: 600px) {
+  .btn-install span {
+    display: none; /* Hide text, only show download icon on small mobile screens */
+  }
+  .btn-install {
+    padding: 0.6rem;
+  }
+}
+

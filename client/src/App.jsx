@@ -31,6 +31,8 @@ function App() {
   const [authEmail, setAuthEmail] = useState('');
   const [navBackground, setNavBackground] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
 
   const handleMovieClick = async (movie, defaultTab = 'trailer') => {
     // Determine type (tv or movie) based on show structure
@@ -80,6 +82,40 @@ function App() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+      // Update UI notify the user they can install the PWA
+      setShowInstallBtn(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // If already running in standalone mode (installed app), hide the install button
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      setShowInstallBtn(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    // Show the install prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    // We've used the prompt, and can't use it again, discard it
+    setDeferredPrompt(null);
+    setShowInstallBtn(false);
+  };
 
   useEffect(() => {
     if (searchQuery) {
@@ -208,6 +244,12 @@ function App() {
         </div>
 
         <div className="nav-actions">
+          {showInstallBtn && (
+            <button className="btn-install" onClick={handleInstallClick} title="Download CineStream App">
+              <Download size={18} />
+              <span>Install App</span>
+            </button>
+          )}
           {user ? (
             <div className="user-profile">
               <div className="user-info">
