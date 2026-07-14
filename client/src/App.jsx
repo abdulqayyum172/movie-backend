@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Play, Download, X, Search, Star, AlertCircle,
   LogOut, User as UserIcon, Menu, Home, Tv, Radio,
-  HelpCircle, Phone, FileText
+  HelpCircle, Phone, FileText, Maximize, RotateCw
 } from 'lucide-react';
 import { useAuth } from './hooks/useAuth';
 import MovieRow from './components/MovieRow';
@@ -37,8 +37,10 @@ function App() {
   const [searching, setSearching]         = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [activeTab, setActiveTab]         = useState('trailer');
-  const [selectedDlServer, setSelectedDlServer] = useState('dl_vidsrc');
+  const [selectedDlServer, setSelectedDlServer] = useState('vidlink');
   const [selectedServer, setSelectedServer] = useState('vidsrc_me');
+  const [selectedSeason, setSelectedSeason] = useState(1);
+  const [selectedEpisode, setSelectedEpisode] = useState(1);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode]           = useState('login');
   const [authEmail, setAuthEmail]         = useState('');
@@ -105,6 +107,8 @@ function App() {
     };
     setSelectedMovie(selected);
     setActiveTab(defaultTab);
+    setSelectedSeason(1);
+    setSelectedEpisode(1);
     setMobileMenuOpen(false);
     try {
       const res = await axios.get(`/api/movies/${selected.id}?type=${selected.type}`);
@@ -117,29 +121,29 @@ function App() {
     {
       id: 'vidsrc_me',
       label: 'Server 1 (VidSrc.me)',
-      getUrl: (id, isTV) => isTV
-        ? `https://vidsrc.me/embed/tv?tmdb=${id}`
+      getUrl: (id, isTV, s, e) => isTV
+        ? `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`
         : `https://vidsrc.me/embed/movie?tmdb=${id}`,
     },
     {
       id: 'vidsrc_xyz',
       label: 'Server 2 (VidSrc.xyz)',
-      getUrl: (id, isTV) => isTV
-        ? `https://vidsrc.xyz/embed/tv?tmdb=${id}`
+      getUrl: (id, isTV, s, e) => isTV
+        ? `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`
         : `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
     },
     {
       id: 'vidlink',
       label: 'Server 3 (VidLink.pro)',
-      getUrl: (id, isTV) => isTV
-        ? `https://vidlink.pro/tv/${id}`
+      getUrl: (id, isTV, s, e) => isTV
+        ? `https://vidlink.pro/tv/${id}/${s}/${e}`
         : `https://vidlink.pro/movie/${id}`,
     },
     {
       id: 'multiembed',
       label: 'Server 4 (MultiEmbed)',
-      getUrl: (id, isTV) => isTV
-        ? `https://multiembed.mov/?video_id=${id}&tmdb=1&tv=1`
+      getUrl: (id, isTV, s, e) => isTV
+        ? `https://multiembed.mov/?video_id=${id}&tmdb=1&tv=1&s=${s}&e=${e}`
         : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
     },
   ];
@@ -149,38 +153,45 @@ function App() {
     if (!selectedMovie) return '';
     const isTV = selectedMovie.type === 'tv';
     const server = WATCH_SERVERS.find(s => s.id === selectedServer) || WATCH_SERVERS[0];
-    return server.getUrl(selectedMovie.id, isTV);
+    return server.getUrl(selectedMovie.id, isTV, selectedSeason, selectedEpisode);
   };
 
   /* ---- download config ---- */
   const DOWNLOAD_SERVERS = [
     {
+      id: 'vidlink',
+      label: 'Server 1 (VidLink - Recommended)',
+      getUrl: (id, isTV, imdbId, s, e) => isTV
+        ? `https://vidlink.pro/download/tv/${id}/${s}/${e}`
+        : `https://vidlink.pro/download/movie/${id}`,
+    },
+    {
       id: 'dl_vidsrc',
-      label: 'Server 1 (VidSrc VIP)',
-      getUrl: (id, isTV) => isTV
-        ? `https://dl.vidsrc.vip/tv/${id}`
-        : `https://dl.vidsrc.vip/movie/${id}`,
-    },
-    {
-      id: 'multiembed',
-      label: 'Server 2 (MultiEmbed)',
-      getUrl: (id, isTV) => isTV
-        ? `https://multiembed.mov/?video_id=${id}&tmdb=1&tv=1`
-        : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-    },
-    {
-      id: 'moviesapi',
-      label: 'Server 3 (MoviesAPI)',
-      getUrl: (id, isTV) => isTV
-        ? `https://moviesapi.club/tv/${id}`
-        : `https://moviesapi.club/movie/${id}`,
+      label: 'Server 2 (VidSrc VIP)',
+      getUrl: (id, isTV, imdbId, s, e) => isTV
+        ? `https://dl.vidsrc.vip/tv/${imdbId || id}/${s}/${e}`
+        : `https://dl.vidsrc.vip/movie/${imdbId || id}`,
     },
     {
       id: 'vidsrc_xyz',
-      label: 'Server 4 (VidSrc.xyz)',
-      getUrl: (id, isTV) => isTV
-        ? `https://vidsrc.xyz/embed/tv?tmdb=${id}`
+      label: 'Server 3 (VidSrc.xyz)',
+      getUrl: (id, isTV, imdbId, s, e) => isTV
+        ? `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`
         : `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
+    },
+    {
+      id: 'moviesapi',
+      label: 'Server 4 (MoviesAPI)',
+      getUrl: (id, isTV, imdbId, s, e) => isTV
+        ? `https://moviesapi.club/tv/${id}-${s}-${e}`
+        : `https://moviesapi.club/movie/${id}`,
+    },
+    {
+      id: 'multiembed',
+      label: 'Server 5 (MultiEmbed)',
+      getUrl: (id, isTV, imdbId, s, e) => isTV
+        ? `https://multiembed.mov/?video_id=${id}&tmdb=1&tv=1&s=${s}&e=${e}`
+        : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
     },
   ];
 
@@ -196,7 +207,46 @@ function App() {
     if (!selectedMovie) return '#';
     const isTV = selectedMovie.type === 'tv';
     const server = DOWNLOAD_SERVERS.find(s => s.id === selectedDlServer) || DOWNLOAD_SERVERS[0];
-    return server.getUrl(selectedMovie.id, isTV);
+    return server.getUrl(selectedMovie.id, isTV, selectedMovie.imdb_id, selectedSeason, selectedEpisode);
+  };
+
+  /* ---- Fullscreen & Orientation Lock ---- */
+  const handleFullscreenAndRotate = async () => {
+    const container = document.querySelector('.video-player-container');
+    if (!container) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        if (container.requestFullscreen) {
+          await container.requestFullscreen();
+        } else if (container.webkitRequestFullscreen) {
+          await container.webkitRequestFullscreen();
+        }
+        
+        if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
+          await window.screen.orientation.lock('landscape').catch(() => {});
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        }
+        if (window.screen && window.screen.orientation && window.screen.orientation.unlock) {
+          window.screen.orientation.unlock();
+        }
+      }
+    } catch (err) {
+      console.warn("Fullscreen/orientation lock failed:", err);
+    }
+  };
+
+  const lastTapRef = useRef(0);
+  const handlePlayerDoubleTap = async (e) => {
+    const now = Date.now();
+    const DOUBLE_PRESS_DELAY = 300;
+    if (now - lastTapRef.current < DOUBLE_PRESS_DELAY) {
+      await handleFullscreenAndRotate();
+    }
+    lastTapRef.current = now;
   };
 
   const openAuth = (mode, email = '') => {
@@ -495,78 +545,124 @@ function App() {
                     ><Download size={14} style={{marginRight:'4px'}} /> Download</button>
                   </div>
 
-                  {activeTab === 'movie' && (
-                    <div className="server-selector">
-                      <select
-                        className="server-select"
-                        value={selectedServer}
-                        onChange={e => setSelectedServer(e.target.value)}
-                      >
-                        {WATCH_SERVERS.map(srv => (
-                          <option key={srv.id} value={srv.id}>{srv.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-
-                <div className={`video-player ${activeTab === 'download' ? 'download-mode' : ''}`}>
-                  {activeTab === 'download' ? (
-                    <div className="download-panel">
-                      <div className="dl-header">
-                        <Download size={32} className="dl-header-icon" />
-                        <div>
-                          <h3>{selectedMovie.title}</h3>
-                          <p>Pick a server, then click your preferred quality to download.</p>
-                        </div>
-                      </div>
-
-                      <div className="dl-server-row">
-                        <span className="dl-server-label">Download Server:</span>
-                        <div className="server-selector">
+                    <div className="server-selector" style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      {selectedMovie.type === 'tv' && (activeTab === 'movie' || activeTab === 'download') && (
+                        <div className="tv-selectors" style={{ display: 'flex', gap: '0.4rem' }}>
                           <select
                             className="server-select"
-                            value={selectedDlServer}
-                            onChange={e => setSelectedDlServer(e.target.value)}
+                            value={selectedSeason}
+                            onChange={e => {
+                              setSelectedSeason(Number(e.target.value));
+                              setSelectedEpisode(1);
+                            }}
                           >
-                            {DOWNLOAD_SERVERS.map(srv => (
-                              <option key={srv.id} value={srv.id}>{srv.label}</option>
+                            {Array.from({ length: selectedMovie.number_of_seasons || 1 }, (_, i) => i + 1).map(s => (
+                              <option key={s} value={s}>S{s}</option>
                             ))}
                           </select>
+                          <select
+                            className="server-select"
+                            value={selectedEpisode}
+                            onChange={e => setSelectedEpisode(Number(e.target.value))}
+                          >
+                            {(() => {
+                              const s = selectedMovie.seasons?.find(season => season.season_number === Number(selectedSeason));
+                              const count = s ? s.episode_count : 24;
+                              return Array.from({ length: count }, (_, i) => i + 1).map(ep => (
+                                <option key={ep} value={ep}>Ep {ep}</option>
+                              ));
+                            })()}
+                          </select>
+                        </div>
+                      )}
+
+                      {activeTab === 'movie' && (
+                        <select
+                          className="server-select"
+                          value={selectedServer}
+                          onChange={e => setSelectedServer(e.target.value)}
+                        >
+                          {WATCH_SERVERS.map(srv => (
+                            <option key={srv.id} value={srv.id}>{srv.label}</option>
+                          ))}
+                        </select>
+                      )}
+
+                      {activeTab === 'movie' && (
+                        <button
+                          className="server-select"
+                          onClick={handleFullscreenAndRotate}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.4rem 0.6rem' }}
+                          title="Rotate / Fullscreen"
+                        >
+                          <Maximize size={12} />
+                          <RotateCw size={12} />
+                        </button>
+                      )}
+                    </div>
+                </div>
+
+                  <div 
+                    className={`video-player ${activeTab === 'download' ? 'download-mode' : ''}`}
+                    onTouchStart={handlePlayerDoubleTap}
+                  >
+                    {activeTab === 'download' ? (
+                      <div className="download-panel">
+                        <div className="dl-header">
+                          <Download size={32} className="dl-header-icon" />
+                          <div>
+                            <h3>{selectedMovie.title}</h3>
+                            <p>Pick a server, then click your preferred quality to download.</p>
+                          </div>
+                        </div>
+
+                        <div className="dl-server-row">
+                          <span className="dl-server-label">Download Server:</span>
+                          <div className="server-selector">
+                            <select
+                              className="server-select"
+                              value={selectedDlServer}
+                              onChange={e => setSelectedDlServer(e.target.value)}
+                            >
+                              {DOWNLOAD_SERVERS.map(srv => (
+                                <option key={srv.id} value={srv.id}>{srv.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <p className="dl-quality-label">Select Quality:</p>
+                        <div className="dl-quality-grid">
+                          {QUALITY_OPTIONS.map(q => (
+                            <a
+                              key={q.label}
+                              href={getDownloadUrl()}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="dl-quality-btn"
+                            >
+                              <span className="dl-quality-tag" style={{ background: q.color }}>{q.tag}</span>
+                              <span className="dl-quality-res">{q.label}</span>
+                              <Download size={15} />
+                            </a>
+                          ))}
+                        </div>
+
+                        <div className="dl-notice">
+                          <AlertCircle size={14} />
+                          <span>If a server doesn't work, switch servers above and retry.</span>
                         </div>
                       </div>
-
-                      <p className="dl-quality-label">Select Quality:</p>
-                      <div className="dl-quality-grid">
-                        {QUALITY_OPTIONS.map(q => (
-                          <a
-                            key={q.label}
-                            href={getDownloadUrl()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="dl-quality-btn"
-                          >
-                            <span className="dl-quality-tag" style={{ background: q.color }}>{q.tag}</span>
-                            <span className="dl-quality-res">{q.label}</span>
-                            <Download size={15} />
-                          </a>
-                        ))}
-                      </div>
-
-                      <div className="dl-notice">
-                        <AlertCircle size={14} />
-                        <span>If a server doesn't work, switch servers above and retry.</span>
-                      </div>
-                    </div>
-                  ) : activeTab === 'movie' ? (
-                    <iframe
-                      key="vidsrc"
-                      src={getServerUrl()}
-                      title="Full Movie Player"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
+                    ) : activeTab === 'movie' ? (
+                      <iframe
+                        key="vidsrc"
+                        src={getServerUrl()}
+                        title="Full Movie Player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock"
+                      />
                   ) : selectedMovie.videoUrl ? (
                     <iframe
                       key={selectedMovie.videoUrl}

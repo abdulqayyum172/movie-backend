@@ -52,7 +52,7 @@ const getMovieDetails = async (id) => {
 
 const getTVDetails = async (id) => {
   const response = await tmdbApi.get(`/tv/${id}`, {
-    params: { append_to_response: 'videos' }
+    params: { append_to_response: 'videos,external_ids' }
   });
   return formatTV(response.data);
 };
@@ -78,6 +78,7 @@ const formatMovie = (movie) => {
   
   return {
     id: movie.id,
+    imdb_id: movie.imdb_id || null,
     type: 'movie',
     title: movie.title || movie.name || 'Untitled',
     description: movie.overview || 'No description available.',
@@ -102,6 +103,7 @@ const formatTV = (tv) => {
 
   return {
     id: tv.id,
+    imdb_id: tv.external_ids?.imdb_id || tv.imdb_id || null,
     type: 'tv',
     title: tv.name || 'Untitled Series',
     description: tv.overview || 'No description available.',
@@ -111,7 +113,9 @@ const formatTV = (tv) => {
     year: tv.first_air_date ? new Date(tv.first_air_date).getFullYear() : 'N/A',
     genre: tv.genre_ids || (tv.genres ? tv.genres.map(g => g.id) : []),
     videoUrl: trailer ? `https://www.youtube.com/embed/${trailer.key}?autoplay=1` : null,
-    popularity: tv.popularity || 0
+    popularity: tv.popularity || 0,
+    seasons: tv.seasons || null,
+    number_of_seasons: tv.number_of_seasons || 1
   };
 };
 
