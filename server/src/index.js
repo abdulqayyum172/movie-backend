@@ -15,7 +15,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-app.options('*', cors());   // handle pre-flight for all routes
+app.options(/.*/, cors());   // handle pre-flight for all routes
 app.use(express.json());
 
 // Health check — keeps Render free-tier awake and lets client detect backend status
