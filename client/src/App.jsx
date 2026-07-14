@@ -37,8 +37,6 @@ function App() {
   const [searching, setSearching]         = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [activeTab, setActiveTab]         = useState('trailer');
-  const [selectedDlServer, setSelectedDlServer] = useState('vidlink');
-  const [selectedServer, setSelectedServer] = useState('vidsrc_me');
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [selectedEpisode, setSelectedEpisode] = useState(1);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -116,84 +114,15 @@ function App() {
     } catch { /* silent */ }
   };
 
-  /* ---- watch config ---- */
-  const WATCH_SERVERS = [
-    {
-      id: 'vidsrc_me',
-      label: 'Server 1 (VidSrc.me)',
-      getUrl: (id, isTV, s, e) => isTV
-        ? `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`
-        : `https://vidsrc.me/embed/movie?tmdb=${id}`,
-    },
-    {
-      id: 'vidsrc_xyz',
-      label: 'Server 2 (VidSrc.xyz)',
-      getUrl: (id, isTV, s, e) => isTV
-        ? `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`
-        : `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
-    },
-    {
-      id: 'vidlink',
-      label: 'Server 3 (VidLink.pro)',
-      getUrl: (id, isTV, s, e) => isTV
-        ? `https://vidlink.pro/tv/${id}/${s}/${e}`
-        : `https://vidlink.pro/movie/${id}`,
-    },
-    {
-      id: 'multiembed',
-      label: 'Server 4 (MultiEmbed)',
-      getUrl: (id, isTV, s, e) => isTV
-        ? `https://multiembed.mov/?video_id=${id}&tmdb=1&tv=1&s=${s}&e=${e}`
-        : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-    },
-  ];
-
   /* ---- stream server URL ---- */
   const getServerUrl = () => {
     if (!selectedMovie) return '';
     const isTV = selectedMovie.type === 'tv';
-    const server = WATCH_SERVERS.find(s => s.id === selectedServer) || WATCH_SERVERS[0];
-    return server.getUrl(selectedMovie.id, isTV, selectedSeason, selectedEpisode);
+    const id = selectedMovie.id;
+    return isTV
+      ? `https://vidlink.pro/tv/${id}/${selectedSeason}/${selectedEpisode}`
+      : `https://vidlink.pro/movie/${id}`;
   };
-
-  /* ---- download config ---- */
-  const DOWNLOAD_SERVERS = [
-    {
-      id: 'vidlink',
-      label: 'Server 1 (VidLink - Recommended)',
-      getUrl: (id, isTV, imdbId, s, e) => isTV
-        ? `https://vidlink.pro/download/tv/${id}/${s}/${e}`
-        : `https://vidlink.pro/download/movie/${id}`,
-    },
-    {
-      id: 'dl_vidsrc',
-      label: 'Server 2 (VidSrc VIP)',
-      getUrl: (id, isTV, imdbId, s, e) => isTV
-        ? `https://dl.vidsrc.vip/tv/${imdbId || id}/${s}/${e}`
-        : `https://dl.vidsrc.vip/movie/${imdbId || id}`,
-    },
-    {
-      id: 'vidsrc_xyz',
-      label: 'Server 3 (VidSrc.xyz)',
-      getUrl: (id, isTV, imdbId, s, e) => isTV
-        ? `https://vidsrc.xyz/embed/tv?tmdb=${id}&season=${s}&episode=${e}`
-        : `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
-    },
-    {
-      id: 'moviesapi',
-      label: 'Server 4 (MoviesAPI)',
-      getUrl: (id, isTV, imdbId, s, e) => isTV
-        ? `https://moviesapi.club/tv/${id}-${s}-${e}`
-        : `https://moviesapi.club/movie/${id}`,
-    },
-    {
-      id: 'multiembed',
-      label: 'Server 5 (MultiEmbed)',
-      getUrl: (id, isTV, imdbId, s, e) => isTV
-        ? `https://multiembed.mov/?video_id=${id}&tmdb=1&tv=1&s=${s}&e=${e}`
-        : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-    },
-  ];
 
   const QUALITY_OPTIONS = [
     { label: '360p',  tag: 'SD',  color: '#6b7280' },
@@ -206,8 +135,10 @@ function App() {
   const getDownloadUrl = () => {
     if (!selectedMovie) return '#';
     const isTV = selectedMovie.type === 'tv';
-    const server = DOWNLOAD_SERVERS.find(s => s.id === selectedDlServer) || DOWNLOAD_SERVERS[0];
-    return server.getUrl(selectedMovie.id, isTV, selectedMovie.imdb_id, selectedSeason, selectedEpisode);
+    const id = selectedMovie.id;
+    return isTV
+      ? `https://vidlink.pro/download/tv/${id}/${selectedSeason}/${selectedEpisode}`
+      : `https://vidlink.pro/download/movie/${id}`;
   };
 
   /* ---- Fullscreen & Orientation Lock ---- */
@@ -557,7 +488,7 @@ function App() {
                             }}
                           >
                             {Array.from({ length: selectedMovie.number_of_seasons || 1 }, (_, i) => i + 1).map(s => (
-                              <option key={s} value={s}>S{s}</option>
+                              <option key={s} value={s}>Season {s}</option>
                             ))}
                           </select>
                           <select
@@ -569,23 +500,11 @@ function App() {
                               const s = selectedMovie.seasons?.find(season => season.season_number === Number(selectedSeason));
                               const count = s ? s.episode_count : 24;
                               return Array.from({ length: count }, (_, i) => i + 1).map(ep => (
-                                <option key={ep} value={ep}>Ep {ep}</option>
+                                <option key={ep} value={ep}>Episode {ep}</option>
                               ));
                             })()}
                           </select>
                         </div>
-                      )}
-
-                      {activeTab === 'movie' && (
-                        <select
-                          className="server-select"
-                          value={selectedServer}
-                          onChange={e => setSelectedServer(e.target.value)}
-                        >
-                          {WATCH_SERVERS.map(srv => (
-                            <option key={srv.id} value={srv.id}>{srv.label}</option>
-                          ))}
-                        </select>
                       )}
 
                       {activeTab === 'movie' && (
@@ -612,22 +531,7 @@ function App() {
                           <Download size={32} className="dl-header-icon" />
                           <div>
                             <h3>{selectedMovie.title}</h3>
-                            <p>Pick a server, then click your preferred quality to download.</p>
-                          </div>
-                        </div>
-
-                        <div className="dl-server-row">
-                          <span className="dl-server-label">Download Server:</span>
-                          <div className="server-selector">
-                            <select
-                              className="server-select"
-                              value={selectedDlServer}
-                              onChange={e => setSelectedDlServer(e.target.value)}
-                            >
-                              {DOWNLOAD_SERVERS.map(srv => (
-                                <option key={srv.id} value={srv.id}>{srv.label}</option>
-                              ))}
-                            </select>
+                            <p>Select your preferred quality below to start downloading.</p>
                           </div>
                         </div>
 
@@ -650,7 +554,7 @@ function App() {
 
                         <div className="dl-notice">
                           <AlertCircle size={14} />
-                          <span>If a server doesn't work, switch servers above and retry.</span>
+                          <span>Downloads are provided via high-speed, direct nodes for maximum speed.</span>
                         </div>
                       </div>
                     ) : activeTab === 'movie' ? (
@@ -661,7 +565,6 @@ function App() {
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
-                        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock"
                       />
                   ) : selectedMovie.videoUrl ? (
                     <iframe
