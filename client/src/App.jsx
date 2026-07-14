@@ -539,7 +539,6 @@ function App() {
                       src={getServerUrl()}
                       title="Full Movie Player"
                       frameBorder="0"
-                      sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
