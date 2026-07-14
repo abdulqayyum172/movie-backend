@@ -37,7 +37,8 @@ function App() {
   const [searching, setSearching]         = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [activeTab, setActiveTab]         = useState('trailer');
-  // selectedServer removed, using a single default server
+  const [selectedDlServer, setSelectedDlServer] = useState('dl_vidsrc');
+  const [selectedServer, setSelectedServer] = useState('vidsrc_me');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode]           = useState('login');
   const [authEmail, setAuthEmail]         = useState('');
@@ -111,23 +112,76 @@ function App() {
     } catch { /* silent */ }
   };
 
+  /* ---- watch config ---- */
+  const WATCH_SERVERS = [
+    {
+      id: 'vidsrc_me',
+      label: 'Server 1 (VidSrc.me)',
+      getUrl: (id, isTV) => isTV
+        ? `https://vidsrc.me/embed/tv?tmdb=${id}`
+        : `https://vidsrc.me/embed/movie?tmdb=${id}`,
+    },
+    {
+      id: 'vidsrc_xyz',
+      label: 'Server 2 (VidSrc.xyz)',
+      getUrl: (id, isTV) => isTV
+        ? `https://vidsrc.xyz/embed/tv?tmdb=${id}`
+        : `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
+    },
+    {
+      id: 'vidlink',
+      label: 'Server 3 (VidLink.pro)',
+      getUrl: (id, isTV) => isTV
+        ? `https://vidlink.pro/tv/${id}`
+        : `https://vidlink.pro/movie/${id}`,
+    },
+    {
+      id: 'multiembed',
+      label: 'Server 4 (MultiEmbed)',
+      getUrl: (id, isTV) => isTV
+        ? `https://multiembed.mov/?video_id=${id}&tmdb=1&tv=1`
+        : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+    },
+  ];
+
   /* ---- stream server URL ---- */
   const getServerUrl = () => {
     if (!selectedMovie) return '';
     const isTV = selectedMovie.type === 'tv';
-    const id   = selectedMovie.id;
-    return isTV ? `https://vidsrc.me/embed/tv?tmdb=${id}` : `https://vidsrc.me/embed/movie?tmdb=${id}`;
+    const server = WATCH_SERVERS.find(s => s.id === selectedServer) || WATCH_SERVERS[0];
+    return server.getUrl(selectedMovie.id, isTV);
   };
 
   /* ---- download config ---- */
   const DOWNLOAD_SERVERS = [
     {
       id: 'dl_vidsrc',
-      label: 'Download Server',
+      label: 'Server 1 (VidSrc VIP)',
       getUrl: (id, isTV) => isTV
         ? `https://dl.vidsrc.vip/tv/${id}`
         : `https://dl.vidsrc.vip/movie/${id}`,
-    }
+    },
+    {
+      id: 'multiembed',
+      label: 'Server 2 (MultiEmbed)',
+      getUrl: (id, isTV) => isTV
+        ? `https://multiembed.mov/?video_id=${id}&tmdb=1&tv=1`
+        : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
+    },
+    {
+      id: 'moviesapi',
+      label: 'Server 3 (MoviesAPI)',
+      getUrl: (id, isTV) => isTV
+        ? `https://moviesapi.club/tv/${id}`
+        : `https://moviesapi.club/movie/${id}`,
+    },
+    {
+      id: 'vidsrc_xyz',
+      label: 'Server 4 (VidSrc.xyz)',
+      getUrl: (id, isTV) => isTV
+        ? `https://vidsrc.xyz/embed/tv?tmdb=${id}`
+        : `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
+    },
   ];
 
   const QUALITY_OPTIONS = [
@@ -141,7 +195,8 @@ function App() {
   const getDownloadUrl = () => {
     if (!selectedMovie) return '#';
     const isTV = selectedMovie.type === 'tv';
-    return DOWNLOAD_SERVERS[0].getUrl(selectedMovie.id, isTV);
+    const server = DOWNLOAD_SERVERS.find(s => s.id === selectedDlServer) || DOWNLOAD_SERVERS[0];
+    return server.getUrl(selectedMovie.id, isTV);
   };
 
   const openAuth = (mode, email = '') => {
@@ -172,7 +227,7 @@ function App() {
     if (!user) {
       return (
         <Landing
-          onGetStarted={(mode, email) => { setAuthEmail(email || ''); openAuth(mode); }}
+          onGetStarted={(mode, email) => openAuth(mode, email || '')}
           setCurrentPage={setCurrentPage}
         />
       );
@@ -440,10 +495,22 @@ function App() {
                     ><Download size={14} style={{marginRight:'4px'}} /> Download</button>
                   </div>
 
-                  {/* server-selector removed */}
+                  {activeTab === 'movie' && (
+                    <div className="server-selector">
+                      <select
+                        className="server-select"
+                        value={selectedServer}
+                        onChange={e => setSelectedServer(e.target.value)}
+                      >
+                        {WATCH_SERVERS.map(srv => (
+                          <option key={srv.id} value={srv.id}>{srv.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
-                <div className="video-player">
+                <div className={`video-player ${activeTab === 'download' ? 'download-mode' : ''}`}>
                   {activeTab === 'download' ? (
                     <div className="download-panel">
                       <div className="dl-header">
@@ -454,7 +521,20 @@ function App() {
                         </div>
                       </div>
 
-                      {/* dl-server-row removed */}
+                      <div className="dl-server-row">
+                        <span className="dl-server-label">Download Server:</span>
+                        <div className="server-selector">
+                          <select
+                            className="server-select"
+                            value={selectedDlServer}
+                            onChange={e => setSelectedDlServer(e.target.value)}
+                          >
+                            {DOWNLOAD_SERVERS.map(srv => (
+                              <option key={srv.id} value={srv.id}>{srv.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
 
                       <p className="dl-quality-label">Select Quality:</p>
                       <div className="dl-quality-grid">
