@@ -37,7 +37,7 @@ function App() {
   const [searching, setSearching]         = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [activeTab, setActiveTab]         = useState('trailer');
-  const [selectedServer, setSelectedServer] = useState('autoembed');
+  // selectedServer removed, using a single default server
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode]           = useState('login');
   const [authEmail, setAuthEmail]         = useState('');
@@ -104,7 +104,6 @@ function App() {
     };
     setSelectedMovie(selected);
     setActiveTab(defaultTab);
-    setSelectedServer('autoembed');
     setMobileMenuOpen(false);
     try {
       const res = await axios.get(`/api/movies/${selected.id}?type=${selected.type}`);
@@ -117,45 +116,18 @@ function App() {
     if (!selectedMovie) return '';
     const isTV = selectedMovie.type === 'tv';
     const id   = selectedMovie.id;
-    switch (selectedServer) {
-      case 'autoembed': return isTV ? `https://autoembed.co/tv/tmdb/${id}` : `https://autoembed.co/movie/tmdb/${id}`;
-      case 'embed_su':  return isTV ? `https://embed.su/embed/tv/${id}` : `https://embed.su/embed/movie/${id}`;
-      case 'vidsrc_to': return isTV ? `https://vidsrc.to/embed/tv/${id}` : `https://vidsrc.to/embed/movie/${id}`;
-      case 'vidsrc_me': return isTV ? `https://vidsrc.me/embed/tv?tmdb=${id}` : `https://vidsrc.me/embed/movie?tmdb=${id}`;
-      default:          return isTV ? `https://autoembed.co/tv/tmdb/${id}` : `https://autoembed.co/movie/tmdb/${id}`;
-    }
+    return isTV ? `https://vidsrc.me/embed/tv?tmdb=${id}` : `https://vidsrc.me/embed/movie?tmdb=${id}`;
   };
 
   /* ---- download config ---- */
   const DOWNLOAD_SERVERS = [
     {
       id: 'dl_vidsrc',
-      label: 'Server 1',
+      label: 'Download Server',
       getUrl: (id, isTV) => isTV
         ? `https://dl.vidsrc.vip/tv/${id}`
         : `https://dl.vidsrc.vip/movie/${id}`,
-    },
-    {
-      id: 'multiembed',
-      label: 'Server 2',
-      getUrl: (id, isTV) => isTV
-        ? `https://multiembed.mov/?video_id=${id}&tmdb=1&tv=1`
-        : `https://multiembed.mov/?video_id=${id}&tmdb=1`,
-    },
-    {
-      id: 'moviesapi',
-      label: 'Server 3',
-      getUrl: (id, isTV) => isTV
-        ? `https://moviesapi.club/tv/${id}`
-        : `https://moviesapi.club/movie/${id}`,
-    },
-    {
-      id: 'vidsrc_xyz',
-      label: 'Server 4',
-      getUrl: (id, isTV) => isTV
-        ? `https://vidsrc.xyz/embed/tv?tmdb=${id}`
-        : `https://vidsrc.xyz/embed/movie?tmdb=${id}`,
-    },
+    }
   ];
 
   const QUALITY_OPTIONS = [
@@ -166,13 +138,10 @@ function App() {
     { label: '4K',    tag: 'UHD', color: '#f59e0b' },
   ];
 
-  const [selectedDlServer, setSelectedDlServer] = useState('dl_vidsrc');
-
   const getDownloadUrl = () => {
     if (!selectedMovie) return '#';
     const isTV = selectedMovie.type === 'tv';
-    const server = DOWNLOAD_SERVERS.find(s => s.id === selectedDlServer) || DOWNLOAD_SERVERS[0];
-    return server.getUrl(selectedMovie.id, isTV);
+    return DOWNLOAD_SERVERS[0].getUrl(selectedMovie.id, isTV);
   };
 
   const openAuth = (mode, email = '') => {
@@ -291,7 +260,7 @@ function App() {
   const showNavbar = user || currentPage !== 'home';
 
   return (
-    <div className="app">
+    <div className="app animate-fade-in">
       {/* ===== NAVBAR ===== */}
       {showNavbar && (
         <nav className={`navbar ${navBackground || currentPage !== 'home' || searchQuery ? 'solid' : ''}`}>
@@ -471,20 +440,7 @@ function App() {
                     ><Download size={14} style={{marginRight:'4px'}} /> Download</button>
                   </div>
 
-                  {activeTab === 'movie' && (
-                    <div className="server-selector">
-                      <select
-                        value={selectedServer}
-                        onChange={e => setSelectedServer(e.target.value)}
-                        className="server-select"
-                      >
-                        <option value="autoembed">Server 1 (AutoEmbed)</option>
-                        <option value="embed_su">Server 2 (Embed.su)</option>
-                        <option value="vidsrc_to">Server 3 (VidSrc.to)</option>
-                        <option value="vidsrc_me">Server 4 (VidSrc.me)</option>
-                      </select>
-                    </div>
-                  )}
+                  {/* server-selector removed */}
                 </div>
 
                 <div className="video-player">
@@ -498,18 +454,7 @@ function App() {
                         </div>
                       </div>
 
-                      <div className="dl-server-row">
-                        <span className="dl-label">Download Server:</span>
-                        <div className="dl-server-btns">
-                          {DOWNLOAD_SERVERS.map(s => (
-                            <button
-                              key={s.id}
-                              className={`dl-server-btn ${selectedDlServer === s.id ? 'active' : ''}`}
-                              onClick={() => setSelectedDlServer(s.id)}
-                            >{s.label}</button>
-                          ))}
-                        </div>
-                      </div>
+                      {/* dl-server-row removed */}
 
                       <p className="dl-quality-label">Select Quality:</p>
                       <div className="dl-quality-grid">
@@ -535,7 +480,7 @@ function App() {
                     </div>
                   ) : activeTab === 'movie' ? (
                     <iframe
-                      key={selectedServer}
+                      key="vidsrc"
                       src={getServerUrl()}
                       title="Full Movie Player"
                       frameBorder="0"
@@ -559,7 +504,7 @@ function App() {
                 {activeTab === 'movie' && (
                   <div className="player-notice">
                     <AlertCircle size={15} />
-                    <span>If the stream fails, try switching <strong>Servers</strong> above.</span>
+                    <span>Using the most reliable unified server. Please be patient while it loads.</span>
                   </div>
                 )}
               </div>

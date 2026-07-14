@@ -43,7 +43,7 @@ const MovieRow = ({ title, fetchUrl, onMovieClick }) => {
   };
 
   return (
-    <div className="movie-row">
+    <div className="movie-row animate-slide-up">
       <h2 className="row-title">{title}</h2>
 
       {error ? (
