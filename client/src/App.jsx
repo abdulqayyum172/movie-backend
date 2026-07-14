@@ -563,8 +563,9 @@ function App() {
                         src={getServerUrl()}
                         title="Full Movie Player"
                         frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                         allowFullScreen
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock allow-downloads"
                       />
                   ) : selectedMovie.videoUrl ? (
                     <iframe
