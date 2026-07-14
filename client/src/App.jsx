@@ -30,7 +30,7 @@ const NAV_ITEMS = [
 ];
 
 function App() {
-  const { user, logout, loading: authLoading } = useAuth();
+  const { user, logout, loading: authLoading, signingIn } = useAuth();
   const [currentPage, setCurrentPage]     = useState('home');
   const [searchQuery, setSearchQuery]     = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -204,6 +204,11 @@ function App() {
     if (currentPage === 'account') return <AccountPage user={user} onLogout={logout} />;
     if (currentPage === 'contact') return <ContactPage />;
     if (['privacy','terms','cookies'].includes(currentPage)) return <LegalPage type={currentPage} />;
+
+    // Still authenticating — show a spinner so we don't flash the Landing page
+    if (signingIn) {
+      return <div className="app-loader">Signing in<span>...</span></div>;
+    }
 
     if (!user) {
       return (

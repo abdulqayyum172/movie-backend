@@ -9,6 +9,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [signingIn, setSigningIn] = useState(false);
 
   // Configure axios defaults
   let apiBase = import.meta.env.VITE_API_URL ||
@@ -84,23 +85,25 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
+    setSigningIn(true);
     try {
       console.log('Attempting login for:', email);
       const response = await axios.post('/api/auth/login', { email, password });
       const { user, token } = response.data;
       console.log('Login successful:', user);
-      
       localStorage.setItem('token', token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
       return user;
     } catch (err) {
+      setSigningIn(false);
       console.error('Login error:', err);
       throw err.response?.data?.error || 'Login failed';
     }
   };
 
   const register = async (username, email, password) => {
+    setSigningIn(true);
     try {
       console.log('Attempting registration for:', email);
       const response = await axios.post('/api/auth/register', { username, email, password });
@@ -111,6 +114,7 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       return user;
     } catch (err) {
+      setSigningIn(false);
       console.error('Registration error:', err);
       throw err.response?.data?.error || 'Registration failed';
     }
@@ -120,10 +124,12 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
+    setSigningIn(false);
     setUser(null);
   };
 
   const loginWithGoogle = async () => {
+    setSigningIn(true);
     try {
       console.log('Starting Google login...');
       const provider = new GoogleAuthProvider();
@@ -154,6 +160,7 @@ export const AuthProvider = ({ children }) => {
         code === 'auth/cancelled-popup-request'
       ) {
         console.info('Google sign-in cancelled by user.');
+        setSigningIn(false);
         return null; // return null so callers know it was cancelled
       }
 
@@ -164,9 +171,11 @@ export const AuthProvider = ({ children }) => {
         provider.setCustomParameters({ prompt: 'select_account' });
         await signInWithRedirect(auth, provider);
         // signInWithRedirect navigates away; result is handled in useEffect on return
+        // signingIn stays true intentionally — page will reload
         return;
       }
 
+      setSigningIn(false);
       console.error('Google login failed details:', err);
       throw err.response?.data?.error || err.message || code || 'Google login failed';
     }
@@ -180,7 +189,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{
-      user, login, register, loginWithGoogle, sendOtp, setupRecaptcha, logout, loading
+      user, login, register, loginWithGoogle, sendOtp, setupRecaptcha, logout, loading, signingIn
     }}>
       {children}
     </AuthContext.Provider>
