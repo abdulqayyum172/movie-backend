@@ -20,8 +20,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(1.05); /* hide edges slightly */
   filter: brightness(0.8);
+  animation: heroZoom 25s ease-in-out infinite alternate;
 }
 
 .hero-overlay {
@@ -37,7 +37,7 @@
 
 .hero-info {
   max-width: 800px;
-  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: heroContentReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hero-info .title {
@@ -96,6 +96,7 @@
 .hero-actions {
   display: flex;
   gap: 1.5rem;
+  animation: heroActionsReveal 1s 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .hero-skeleton {
@@ -105,6 +106,21 @@
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes heroZoom {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
+}
+
+@keyframes heroContentReveal {
+  0% { opacity: 0; transform: translateY(60px) scale(0.95); filter: blur(10px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes heroActionsReveal {
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
